@@ -1,6 +1,6 @@
 ## 1. SimpleToken
 
-```
+```Solidity
 function sendToken(address _recipient, uint _amount) {
     require(balances[msg.sender]!=0); // You must have some tokens.
     
@@ -16,7 +16,7 @@ Function `sendToken` only checks if the `msg.sender` has a non-zero balance. Thu
 <img src="screenshots/1.3.jpg" alt="screenshot 1.3" width="600" align="middle"/>
 
 After the exploit, both the sender and recipient addresses can be given a very large number of tokens. The recipient address will have its balance increase by the amount sent to it, while the sender address will have its balance uint underflow. As a result, its value will equal to 
-```
+```Solidity
   2^256 - 1 - (_amount + balance[msg.sender])
 ``` 
 which can also be manipulated to be however small or large. 
@@ -25,7 +25,7 @@ which can also be manipulated to be however small or large.
 
 ## 2. VoteTwoChoices
 
-``` 
+```Solidity 
 function vote(uint _nbVotes, bytes32 _proposition) {
     require(_nbVotes + votesCast[msg.sender]<=votingRights[msg.sender]); // Check you have enough voting rights.
     
@@ -43,7 +43,7 @@ Then we can pass a equally negative `_nbVotes` of -1 to vote on another proposit
 
 ## 3. BuyTokens
 
-``` 
+```Solidity
 function buyToken(uint _amount, uint _price) payable {
     require(_price>=price); // The price is at least the current price.
     require(_price * _amount * 1 ether <= msg.value); // You have paid at least the total price.
@@ -60,11 +60,29 @@ In the end, we end up with `2^256 - 2` in our balance.
 
 ## 4. Store
 
-transfer() is used instead of call.value(), so how to attack? Any other vulnerabilities other than reentrancy?
+```Solidity
+function store() payable {
+    safes.push(Safe({owner: msg.sender, amount: msg.value}));
+}
+
+function take() {
+    for (uint i; i<safes.length; ++i) {
+        Safe safe = safes[i];
+        if (safe.owner==msg.sender && safe.amount!=0) {
+            msg.sender.transfer(safe.amount);
+            safe.amount=0;
+        }
+    }
+}
+```
+
+The use of structs in an array to store each safe's owner and amount is not ideal. This is because a new safe is pushed to the array everytime and the `take()` function needs to loop through a longer array after every new safe is stored. A better alternative would be to use a mapping instead of an array which has constant lookup time. The `msg.sender` can be used as the key of the mapping, and each call of the store function can add the amount to the existing value in the mapping.
+
+Also, although transfer() is used instead of call.value(), it is still better practice to transfer the amount after setting the amount to 0. We can use `require(msg.sender.transfer(safe.amount))` to make sure the transfer succeeds or else the amount is not changed.
 
 ## 5. CountContribution
 
-```
+```Solidity
 function recordContribution(address _user, uint _amount) {
     contribution[_user]+=_amount;
     totalContributions+=_amount;
@@ -77,7 +95,7 @@ There is no visibility specified for this function, so it is public by default. 
 
 ## 6. Token
 
-```
+```Solidity
 function sendAllTokens(address _recipient) {
     balances[_recipient]=+balances[msg.sender];
     balances[msg.sender]=0;
