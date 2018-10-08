@@ -11,9 +11,9 @@ function sendToken(address _recipient, uint _amount) {
 
 Function `sendToken` only checks if the `msg.sender` has a non-zero balance. Thus we can exploit this check by calling sendToken from one account with 1 token, to send to another address that we own an arbitrarily large amount of tokens.
 
-<img src="screenshots/1.1.jpg" alt="screenshot 1.1" width="200"/>
-![screenshot 1.2](screenshots/1.2.jpg)
-![screenshot 1.3](screenshots/1.3.jpg)
+<img src="screenshots/1.1.jpg" alt="screenshot 1.1" width="600" align="middle"/>
+<img src="screenshots/1.2.jpg" alt="screenshot 1.2" width="600" align="middle"/>
+<img src="screenshots/1.3.jpg" alt="screenshot 1.3" width="600" align="middle"/>
 
 After the exploit, both the sender and recipient addresses can be given a very large number of tokens. The recipient address will have its balance increase by the amount sent to it, while the sender address will have its balance uint underflow. As a result, its value will equal to 
 ```
@@ -35,8 +35,9 @@ function vote(uint _nbVotes, bytes32 _proposition) {
 ```
 
 With the same problem of not using SafeMath, the value `votesReceived[_proposition]` can also be underflown. In this case, we can get past the `require` check by first voting for one proposition, increasing the `votesCast[msg.sender]` by 1. 
-![screenshot 2.1](screenshots/2.1.jpg)
+<img src="screenshots/2.1.jpg" alt="screenshot 2.1" width="600" align="middle"/>
 
 Then we can pass a equally negative `_nbVotes` of -1 to vote on another proposition. This would result in the second proposition's `votesReceived[_proposition]` to be underflown.
 
-![screenshot 2.2](screenshots/2.2.jpg)
+<img src="screenshots/2.2.jpg" alt="screenshot 2.2" width="600" align="middle"/>
+
