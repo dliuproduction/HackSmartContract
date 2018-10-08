@@ -11,7 +11,7 @@ function sendToken(address _recipient, uint _amount) {
 
 Function `sendToken` only checks if the `msg.sender` has a non-zero balance. Thus we can exploit this check by calling sendToken from one account with 1 token, to send to another address that we own an arbitrarily large amount of tokens.
 
-![screenshot 1.1](screenshots/1.1.jpg)
+<img src="screenshots/1.1.jpg" alt="screenshot 1.1" width="200"/>
 ![screenshot 1.2](screenshots/1.2.jpg)
 ![screenshot 1.3](screenshots/1.3.jpg)
 
